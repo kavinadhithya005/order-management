@@ -5,6 +5,7 @@ import com.example.order_management.dto.OrderRequest;
 import com.example.order_management.entity.CustomerOrder;
 import com.example.order_management.entity.Product;
 import com.example.order_management.exception.InsufficientStockException;
+import com.example.order_management.exception.ResourceNotFoundException;
 import com.example.order_management.repository.CustomerOrderRepository;
 import com.example.order_management.repository.ProductRepository;
 
@@ -79,4 +80,22 @@ class OrderServiceTest {
         assertEquals(1, mouse.getStock());
         verify(orderRepository, never()).save(any(CustomerOrder.class));
     }
+
+    @Test
+void rejectsOrderWhenProductDoesNotExist() {
+    Long missingProductId = 999L;
+
+    when(productRepository.findById(missingProductId))
+            .thenReturn(Optional.empty());
+
+    OrderRequest request = new OrderRequest(
+            "Kavin",
+            List.of(new OrderItemRequest(missingProductId, 1)));
+
+    assertThrows(
+            ResourceNotFoundException.class,
+            () -> orderService.placeOrder(request));
+
+    verify(orderRepository, never()).save(any(CustomerOrder.class));
+}
 }
